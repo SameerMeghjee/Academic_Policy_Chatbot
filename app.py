@@ -6,10 +6,12 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
 from groq import Groq
 import tempfile
+from dotenv import load_dotenv
 
 # === Configuration ===
-GROQ_API_KEY = "" #Add your Groq API key here
-PDF_PATH = "academic_policy.pdf"  
+load_dotenv()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY") #Add your Groq API key in .env 
+PDF_PATH = "academic_policy.pdf" 
 
 # === Page Settings ===
 st.set_page_config(page_title="Academic Policy Chatbot", page_icon="🎓", layout="wide")
