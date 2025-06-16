@@ -1,30 +1,24 @@
 import os
 import streamlit as st
-from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
-import google.generativeai as genai
+from groq import Groq
+from dotenv import load_dotenv
 
-# === Load API Key ===
+# === Load environment variables ===
 load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-# === Gemini Setup ===
-genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel("gemini-pro")
-
-# === PDF File Path ===
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # Add your Groq API key in .env
 PDF_PATH = "academic_policy.pdf"
 
-# === Page Config ===
+# === Streamlit page config ===
 st.set_page_config(page_title="Academic Policy Chatbot", page_icon="🎓", layout="wide")
 st.markdown("<h2 style='text-align: center;'>🎓 Academic Policy Chatbot</h2>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; font-size: 17px;'>Ask any question about your student policies below 👇</p>", unsafe_allow_html=True)
 st.divider()
 
-# === Load and Process PDF into Vector DB ===
+# === Load PDF and create vectorstore ===
 @st.cache_resource(show_spinner="🔄 Loading academic policy...")
 def prepare_vectorstore(pdf_path):
     loader = PyPDFLoader(pdf_path)
@@ -36,37 +30,47 @@ def prepare_vectorstore(pdf_path):
 
 vectorstore = prepare_vectorstore(PDF_PATH)
 
-# === Retrieve Similar Chunks ===
+# === Retrieve relevant context from the document ===
 def retrieve_context(query, vectorstore, top_k=5):
     retriever = vectorstore.as_retriever(search_kwargs={"k": top_k})
     docs = retriever.get_relevant_documents(query)
     return "\n\n".join([doc.page_content for doc in docs])
 
-# === Generate Answer from Gemini ===
+# === Generate response using Groq's LLaMA 3 ===
 def generate_answer(query, context):
+    client = Groq(api_key=GROQ_API_KEY)
+
     prompt = (
-        f"You are a helpful assistant that answers academic policy questions. "
-        f"Use the context below to answer the user's question.\n\n"
+        f"You are a knowledgeable assistant. Use the academic policy context below to answer the user's question.\n\n"
         f"Context:\n{context}\n\n"
-        f"Question:\n{query}\n\n"
+        f"Question: {query}\n\n"
         f"Answer:"
     )
-    try:
-        response = gemini_model.generate_content(prompt)
-        return response.text.strip()
-    except Exception as e:
-        return f"⚠️ Gemini API Error: {e}"
 
-# === Session State for Chat ===
+    try:
+        response = client.chat.completions.create(
+            model="llama3-70b-8192",  # Groq's optimized LLaMA 3 model
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant for answering academic policy questions."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3
+        )
+        return response.choices[0].message.content.strip()
+
+    except Exception as e:
+        return f"⚠️ Error from Groq API: {e}"
+
+# === Initialize session state ===
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# === Display Chat History ===
+# === Display chat messages ===
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# === Chat Input ===
+# === Accept new input ===
 query = st.chat_input("Ask something about the academic policy...")
 
 if query:
