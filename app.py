@@ -17,18 +17,12 @@ PDF_PATH = "academic_policy.pdf"
 col1, col2 = st.columns([1, 3])
 
 with col1:
-    logo_path = "https://profiles.pk/wp-content/uploads/2018/02/iqrauniversitylogo.jpg"  
-    if os.path.exists(logo_path):
-        st.image(logo_path, width=120)
-    else:
-        st.markdown("**[Logo Missing]** Upload a logo.png")
+    logo_url = "https://profiles.pk/wp-content/uploads/2018/02/iqrauniversitylogo.jpg"  
+    st.image(logo_url, width=120)
 
 with col2:
-    student_image_path = "https://img.freepik.com/premium-photo/portrait-student-holding-books-library_357704-1410.jpg"  # Replace with your student image filename
-    if os.path.exists(student_image_path):
-        st.image(student_image_path, width=250, use_column_width=False)
-    else:
-        st.markdown("**[Student Image Missing]** Upload students.png")
+    student_image_url = "https://img.freepik.com/premium-photo/portrait-student-holding-books-library_357704-1410.jpg"  
+    st.image(student_image_url, width=250, use_column_width=False)
 
 # === Streamlit page config ===
 st.set_page_config(page_title="Iqra University Academic Policy Chatbot", page_icon="🎓", layout="wide")
