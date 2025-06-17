@@ -8,6 +8,8 @@ from langchain.vectorstores import FAISS
 from groq import Groq
 from dotenv import load_dotenv
 
+st.set_page_config(page_title="Iqra University Academic Policy Chatbot", page_icon="🎓", layout="wide")
+
 # === Load environment variables ===
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # Add your Groq API key in .env
@@ -25,7 +27,6 @@ with col2:
     st.image(student_image_url, width=250, use_column_width=False)
 
 # === Streamlit page config ===
-st.set_page_config(page_title="Iqra University Academic Policy Chatbot", page_icon="🎓", layout="wide")
 st.markdown("<h2 style='text-align: center;'>🎓 Academic Policy Chatbot</h2>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; font-size: 17px;'>Ask any question about your student policies below 👇</p>", unsafe_allow_html=True)
 st.divider()
