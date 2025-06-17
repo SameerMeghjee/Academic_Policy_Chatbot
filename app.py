@@ -35,8 +35,8 @@ with col2:
 
 with col3:
     # Top-right student image
-    #student_image_url = "https://img.freepik.com/premium-photo/portrait-student-holding-books-library_357704-1410.jpg"  
-    #st.image(student_image_url, width=250, use_column_width=False)
+    student_image_url = "https://img.freepik.com/premium-photo/portrait-student-holding-books-library_357704-1410.jpg"  
+    st.image(student_image_url, width=250, use_column_width=False)
 
 
 # === Streamlit page config ===
