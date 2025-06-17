@@ -13,7 +13,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # Add your Groq API key in .env
 PDF_PATH = "academic_policy.pdf"
 
 # === Streamlit page config ===
-st.set_page_config(page_title="Academic Policy Chatbot", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="Iqra University Academic Policy Chatbot", page_icon="🎓", layout="wide")
 st.markdown("<h2 style='text-align: center;'>🎓 Academic Policy Chatbot</h2>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; font-size: 17px;'>Ask any question about your student policies below 👇</p>", unsafe_allow_html=True)
 st.divider()
