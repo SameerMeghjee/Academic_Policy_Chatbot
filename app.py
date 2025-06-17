@@ -15,16 +15,29 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # Add your Groq API key in .env
 PDF_PATH = "academic_policy.pdf"
 
-# === Top bar with logo and student image ===
-col1, col2 = st.columns([1, 3])
+# === Top Layout ===
+col1, col2, col3 = st.columns([1, 2, 1])
 
 with col1:
-    logo_url = "https://profiles.pk/wp-content/uploads/2018/02/iqrauniversitylogo.jpg"  
-    st.image(logo_url, width=120)
+    pass  # empty left side
 
 with col2:
-    student_image_url = "https://img.freepik.com/premium-photo/portrait-student-holding-books-library_357704-1410.jpg"  
-    st.image(student_image_url, width=250, use_column_width=False)
+    # Centered logo at the bottom of the top section
+    logo_url = "https://profiles.pk/wp-content/uploads/2018/02/iqrauniversitylogo.jpg"  
+    st.markdown(
+        f"""
+        <div style='display: flex; justify-content: center; align-items: flex-end; height: 120px;'>
+            <img src="{logo_url}" alt="Logo" style="width: 120px;" />
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with col3:
+    # Top-right student image
+    #student_image_url = "https://img.freepik.com/premium-photo/portrait-student-holding-books-library_357704-1410.jpg"  
+    #st.image(student_image_url, width=250, use_column_width=False)
+
 
 # === Streamlit page config ===
 st.markdown("<h2 style='text-align: center;'>🎓 Academic Policy Chatbot</h2>", unsafe_allow_html=True)
