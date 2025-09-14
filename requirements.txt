@@ -3,5 +3,6 @@ langchain
 faiss-cpu
 pypdf
 sentence-transformers
-groq
+google-generativeai
 langchain-community
+
