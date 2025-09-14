@@ -1,54 +1,40 @@
 import os
 import streamlit as st
 from PIL import Image
-from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
-from openai import OpenAI   # ✅ DeepSeek uses OpenAI-compatible API
+from groq import Groq        # ✅ Using Groq SDK
+from dotenv import load_dotenv
 
-# -------------------------------------------------------------------
-# Streamlit Page Configuration
-# -------------------------------------------------------------------
+# === Page Configuration ===
 st.set_page_config(page_title="Iqra University Academic Policy Chatbot",
                    page_icon="🎓", layout="wide")
 
-# === Load Environment Variables ===
+# === Load environment variables ===
 load_dotenv()
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")   # put your key in .env
 PDF_PATH = "academic_policy.pdf"
 
-# === Configure OpenAI client for DeepSeek ===
-client = OpenAI(
-    api_key=DEEPSEEK_API_KEY,
-    base_url="https://api.deepseek.com"  # DeepSeek’s OpenAI-compatible endpoint
-)
-
-# -------------------------------------------------------------------
-# UI Header
-# -------------------------------------------------------------------
+# === Top Layout (Logo) ===
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     logo_url = "https://profiles.pk/wp-content/uploads/2018/02/iqrauniversitylogo.jpg"
     st.markdown(
         f"""
-        <div style='display: flex; justify-content: center; align-items: flex-end; height: 120px;'>
-            <img src="{logo_url}" alt="Logo" style="width: 120px;" />
+        <div style='display:flex;justify-content:center;align-items:flex-end;height:120px;'>
+            <img src="{logo_url}" alt="Logo" style="width:120px;" />
         </div>
         """,
         unsafe_allow_html=True
     )
 
-st.markdown("<h2 style='text-align: center;'>🎓 Academic Policy Chatbot</h2>",
-            unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-size: 17px;'>Ask any question about your student policies below 👇</p>",
-            unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center;'>🎓 Academic Policy Chatbot</h2>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 17px;'>Ask any question about your student policies below 👇</p>", unsafe_allow_html=True)
 st.divider()
 
-# -------------------------------------------------------------------
-# Load PDF and Create Vectorstore
-# -------------------------------------------------------------------
+# === Load PDF and Create Vectorstore ===
 @st.cache_resource(show_spinner="🔄 Loading academic policy...")
 def prepare_vectorstore(pdf_path):
     loader = PyPDFLoader(pdf_path)
@@ -60,50 +46,43 @@ def prepare_vectorstore(pdf_path):
 
 vectorstore = prepare_vectorstore(PDF_PATH)
 
+# === Retrieve Context ===
 def retrieve_context(query, vectorstore, top_k=5):
     retriever = vectorstore.as_retriever(search_kwargs={"k": top_k})
     docs = retriever.get_relevant_documents(query)
     return "\n\n".join([doc.page_content for doc in docs])
 
-# -------------------------------------------------------------------
-# Generate Answer with DeepSeek
-# -------------------------------------------------------------------
+# === Generate Answer using Groq ===
 def generate_answer(query, context):
-    """
-    Uses DeepSeek's OpenAI-compatible API (Chat Completions) to generate a response.
-    """
+    client = Groq(api_key=GROQ_API_KEY)
+
     prompt = (
         f"You are a knowledgeable assistant. Use the academic policy context below "
-        f"to answer the user's question.\n\n"
-        f"Context:\n{context}\n\n"
-        f"Question: {query}\n\n"
-        f"Answer:"
+        f"to answer the user's question.\n\nContext:\n{context}\n\nQuestion: {query}\n\nAnswer:"
     )
+
     try:
         response = client.chat.completions.create(
-            model="deepseek-chat",      # ✅ DeepSeek’s main chat model
+            model="llama3-70b-8192",  # ✅ Groq's LLaMA-3 model
             messages=[
-                {"role": "system", "content": "You are a helpful assistant for academic policy questions."},
+                {"role": "system", "content": "You are a helpful assistant for answering academic policy questions."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"⚠️ Error from DeepSeek API: {e}"
+        return f"⚠️ Error from Groq API: {e}"
 
-# -------------------------------------------------------------------
-# Session State for Conversation
-# -------------------------------------------------------------------
+# === Chat History ===
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display previous messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Input box for new query
+# === User Input ===
 query = st.chat_input("Ask something about the academic policy...")
 
 if query:
