@@ -74,11 +74,13 @@ def generate_answer(query, context):
         f"Answer:"
     )
     try:
-        model = genai.GenerativeModel("gemini-pro")
+        model = genai.GenerativeModel("models/gemini-1.5-flash")
         response = model.generate_content(prompt)
-        return response.text
+        # Safely extract text depending on library version
+        return response.text if hasattr(response, "text") else response.candidates[0].content.parts[0].text
     except Exception as e:
         return f"⚠️ Error from Google API: {e}"
+
 
 # === Initialize session state ===
 if "messages" not in st.session_state:
@@ -102,3 +104,4 @@ if query:
             answer = generate_answer(query, context)
             st.markdown(answer)
             st.session_state.messages.append({"role": "assistant", "content": answer})
+
