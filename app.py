@@ -63,7 +63,7 @@ def generate_answer(query, context):
 
     try:
         response = client.chat.completions.create(
-            model="llama3-70b-8192",  # ✅ Groq's LLaMA-3 model
+            model="llama-3.1-70b-versatile",  # 
             messages=[
                 {"role": "system", "content": "You are a helpful assistant for answering academic policy questions."},
                 {"role": "user", "content": prompt}
@@ -95,3 +95,4 @@ if query:
             answer = generate_answer(query, context)
             st.markdown(answer)
             st.session_state.messages.append({"role": "assistant", "content": answer})
+
