@@ -1,30 +1,34 @@
 import os
 import streamlit as st
 from PIL import Image
+from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
-from dotenv import load_dotenv
-import google.generativeai as genai  # ✅ Google AI Studio
+from openai import OpenAI   # ✅ DeepSeek uses OpenAI-compatible API
 
+# -------------------------------------------------------------------
+# Streamlit Page Configuration
+# -------------------------------------------------------------------
 st.set_page_config(page_title="Iqra University Academic Policy Chatbot",
                    page_icon="🎓", layout="wide")
 
-# === Load environment variables ===
+# === Load Environment Variables ===
 load_dotenv()
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")  # Add your Gemini key in .env
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 PDF_PATH = "academic_policy.pdf"
 
-# === Configure Gemini API ===
-genai.configure(api_key=GOOGLE_API_KEY)
+# === Configure OpenAI client for DeepSeek ===
+client = OpenAI(
+    api_key=DEEPSEEK_API_KEY,
+    base_url="https://api.deepseek.com"  # DeepSeek’s OpenAI-compatible endpoint
+)
 
-# === Top Layout ===
+# -------------------------------------------------------------------
+# UI Header
+# -------------------------------------------------------------------
 col1, col2, col3 = st.columns([1, 2, 1])
-
-with col1:
-    pass
-
 with col2:
     logo_url = "https://profiles.pk/wp-content/uploads/2018/02/iqrauniversitylogo.jpg"
     st.markdown(
@@ -36,17 +40,15 @@ with col2:
         unsafe_allow_html=True
     )
 
-with col3:
-    pass
-
-# === Page Title ===
 st.markdown("<h2 style='text-align: center;'>🎓 Academic Policy Chatbot</h2>",
             unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; font-size: 17px;'>Ask any question about your student policies below 👇</p>",
             unsafe_allow_html=True)
 st.divider()
 
-# === Load PDF and create vectorstore ===
+# -------------------------------------------------------------------
+# Load PDF and Create Vectorstore
+# -------------------------------------------------------------------
 @st.cache_resource(show_spinner="🔄 Loading academic policy...")
 def prepare_vectorstore(pdf_path):
     loader = PyPDFLoader(pdf_path)
@@ -58,14 +60,18 @@ def prepare_vectorstore(pdf_path):
 
 vectorstore = prepare_vectorstore(PDF_PATH)
 
-# === Retrieve relevant context from the document ===
 def retrieve_context(query, vectorstore, top_k=5):
     retriever = vectorstore.as_retriever(search_kwargs={"k": top_k})
     docs = retriever.get_relevant_documents(query)
     return "\n\n".join([doc.page_content for doc in docs])
 
-# === Generate response using Google Gemini ===
+# -------------------------------------------------------------------
+# Generate Answer with DeepSeek
+# -------------------------------------------------------------------
 def generate_answer(query, context):
+    """
+    Uses DeepSeek's OpenAI-compatible API (Chat Completions) to generate a response.
+    """
     prompt = (
         f"You are a knowledgeable assistant. Use the academic policy context below "
         f"to answer the user's question.\n\n"
@@ -74,24 +80,30 @@ def generate_answer(query, context):
         f"Answer:"
     )
     try:
-        model = genai.GenerativeModel("models/gemini-1.5-flash")
-        response = model.generate_content(prompt)
-        # Safely extract text depending on library version
-        return response.text if hasattr(response, "text") else response.candidates[0].content.parts[0].text
+        response = client.chat.completions.create(
+            model="deepseek-chat",      # ✅ DeepSeek’s main chat model
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant for academic policy questions."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3
+        )
+        return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"⚠️ Error from Google API: {e}"
+        return f"⚠️ Error from DeepSeek API: {e}"
 
-
-# === Initialize session state ===
+# -------------------------------------------------------------------
+# Session State for Conversation
+# -------------------------------------------------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# === Display chat history ===
+# Display previous messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# === Accept new user input ===
+# Input box for new query
 query = st.chat_input("Ask something about the academic policy...")
 
 if query:
@@ -104,4 +116,3 @@ if query:
             answer = generate_answer(query, context)
             st.markdown(answer)
             st.session_state.messages.append({"role": "assistant", "content": answer})
-
